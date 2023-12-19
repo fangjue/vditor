@@ -105,6 +105,9 @@ interface ILuteRenderers {
     Md2VditorDOM?: ILuteRender,
     Md2VditorIRDOM?: ILuteRender,
     Md2VditorSVDOM?: ILuteRender,
+    SpinVditorDOM?: ILuteRender,
+    SpinVditorIRDOM?: ILuteRender,
+    SpinVditorSVDOM?: ILuteRender,
 }
 
 interface ILuteOptions extends IMarkdownConfig {
