@@ -729,6 +729,8 @@ interface IOptions {
         render: (element: HTMLElement, vditor: IVditor) => void
     }[],
 
+    /** Hook for getMarkdown in src/ts/markdown/getMarkdown.ts */
+    beforeGetMarkdown?(currentMode: string, el: HTMLElement): string | undefined;
     /** 编辑器异步渲染完成后的回调方法 */
     after?(): void;
 
