@@ -502,6 +502,10 @@ class Vditor extends VditorMethod {
                 sanitize: this.vditor.options.preview.markdown.sanitize,
                 toc: this.vditor.options.preview.markdown.toc,
             });
+            // 从缓存中加载上一次编辑器保存的内容进行初次预览前设置自定义渲染器
+            if (mergedOptions.luteRenderers) {
+                this.vditor.lute.SetJSRenderers({renderers: mergedOptions.luteRenderers})
+            }
 
             this.vditor.preview = new Preview(this.vditor);
 
