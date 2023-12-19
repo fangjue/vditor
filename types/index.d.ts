@@ -723,6 +723,8 @@ interface IOptions {
     /** @link https://ld246.com/article/1549638745630#options-outline */
     outline?: IOutline;
 
+    /** Hook for getMarkdown in src/ts/markdown/getMarkdown.ts */
+    beforeGetMarkdown?(currentMode: string, el: HTMLElement): string | undefined;
     /** 编辑器异步渲染完成后的回调方法 */
     after?(): void;
 
