@@ -396,6 +396,10 @@ interface IUpload {
 
     /** 图片地址上传后的回调  */
     linkToImgCallback?(responseText: string): void;
+
+    /** 自定义上传请求函数 */
+    customUploader?(files: File[], vditor: IVditor, onProgress: (progress: number) => void): Promise<unknown>;
+    customUploaderCompleted?(response: unknown, vditor: IVditor, errorCallback: (html?: string) => void)
 }
 
 /** @link https://ld246.com/article/1549638745630#options-toolbar */

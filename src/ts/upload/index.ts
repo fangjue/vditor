@@ -72,10 +72,21 @@ const validateFile = (vditor: IVditor, files: File[]) => {
     return uploadFileList;
 };
 
-const genUploadedLabel = (responseText: string, vditor: IVditor) => {
+const genUploadedLabel = (response: unknown, vditor: IVditor) => {
     const editorElement = getElement(vditor);
     editorElement.focus();
-    const response = JSON.parse(responseText);
+
+    (vditor.options.upload.customUploaderCompleted || defaultUploaderCompleted)(response, vditor, (html?: string) => {
+        if (html) {
+            vditor.tip.show(html);
+        } else {
+            vditor.tip.hide();
+        }
+    })
+};
+
+const defaultUploaderCompleted = (responseText: unknown, vditor: IVditor, errorCallback: (html?: string) => void) => {
+    const response = JSON.parse(responseText as string);
     let errorTip = "";
 
     if (response.code === 1) {
@@ -92,11 +103,7 @@ const genUploadedLabel = (responseText: string, vditor: IVditor) => {
         errorTip += "</ul>";
     }
 
-    if (errorTip) {
-        vditor.tip.show(errorTip);
-    } else {
-        vditor.tip.hide();
-    }
+    errorCallback(errorTip);
 
     let succFileText = "";
     Object.keys(response.data.succMap).forEach((key) => {
@@ -138,7 +145,7 @@ const genUploadedLabel = (responseText: string, vditor: IVditor) => {
     setSelectionFocus(vditor.upload.range);
     document.execCommand("insertHTML", false, succFileText);
     vditor.upload.range = getSelection().getRangeAt(0).cloneRange();
-};
+}
 
 const uploadFiles =
     async (vditor: IVditor, files: FileList | DataTransferItemList | File[], element?: HTMLInputElement) => {
@@ -196,65 +203,80 @@ const uploadFiles =
             return;
         }
 
-        const formData = new FormData();
-
-        const extraData = vditor.options.upload.extraData;
-        for (const key of Object.keys(extraData)) {
-            formData.append(key, extraData[key]);
-        }
-
-        for (let i = 0, iMax = validateResult.length; i < iMax; i++) {
-            formData.append(vditor.options.upload.fieldName, validateResult[i]);
-        }
-
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", vditor.options.upload.url);
-        if (vditor.options.upload.token) {
-            xhr.setRequestHeader("X-Upload-Token", vditor.options.upload.token);
-        }
-        if (vditor.options.upload.withCredentials) {
-            xhr.withCredentials = true;
-        }
-        setHeaders(vditor, xhr);
-        vditor.upload.isUploading = true;
         editorElement.setAttribute("contenteditable", "false");
-        xhr.onreadystatechange = () => {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                vditor.upload.isUploading = false;
-                editorElement.setAttribute("contenteditable", "true");
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    if (vditor.options.upload.success) {
-                        vditor.options.upload.success(editorElement, xhr.responseText);
-                    } else {
-                        let responseText = xhr.responseText;
-                        if (vditor.options.upload.format) {
-                            responseText = vditor.options.upload.format(files as File [], xhr.responseText);
-                        }
-                        genUploadedLabel(responseText, vditor);
-                    }
-                } else {
-                    if (vditor.options.upload.error) {
-                        vditor.options.upload.error(xhr.responseText);
-                    } else {
-                        vditor.tip.show(xhr.responseText);
-                    }
-                }
-                if (element) {
-                    element.value = "";
-                }
-                vditor.upload.element.style.display = "none";
-            }
-        };
-        xhr.upload.onprogress = (event: ProgressEvent) => {
-            if (!event.lengthComputable) {
-                return;
-            }
-            const progress = event.loaded / event.total * 100;
+
+        (vditor.options.upload.customUploader || defaultUploader)(validateResult, vditor, (progress: number) => {
             vditor.upload.element.style.display = "block";
             const progressBar = vditor.upload.element;
-            progressBar.style.width = progress + "%";
-        };
-        xhr.send(formData);
+            progressBar.style.width = (progress * 100) + "%";
+        }).then((response: unknown) => {
+            // genUploadedLabel requires contenteditable.
+            editorElement.setAttribute("contenteditable", "true");
+
+            if (vditor.options.upload.success) {
+                vditor.options.upload.success(editorElement, response as string);
+            } else {
+                if (vditor.options.upload.format) {
+                    response = vditor.options.upload.format(files as File [], response as string);
+                }
+                genUploadedLabel(response, vditor);
+            }
+        }).catch((message: string) => {
+            // Restore contenteditable on error.
+            editorElement.setAttribute("contenteditable", "true");
+
+            if (vditor.options.upload.error) {
+                vditor.options.upload.error(message);
+            } else {
+                vditor.tip.show(message);
+            }
+        }).finally(() => {
+            vditor.upload.isUploading = false;
+            if (element) {
+                element.value = "";
+            }
+            vditor.upload.element.style.display = "none";
+        })
     };
+
+const defaultUploader = (files: File[], vditor: IVditor, onProgress: (progress: number) => void) => new Promise((resolve, reject) => {
+    const formData = new FormData();
+
+    const extraData = vditor.options.upload.extraData;
+    for (const key of Object.keys(extraData)) {
+        formData.append(key, extraData[key]);
+    }
+
+    for (let i = 0, iMax = files.length; i < iMax; i++) {
+        formData.append(vditor.options.upload.fieldName, files[i]);
+    }
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", vditor.options.upload.url);
+    if (vditor.options.upload.token) {
+        xhr.setRequestHeader("X-Upload-Token", vditor.options.upload.token);
+    }
+    if (vditor.options.upload.withCredentials) {
+        xhr.withCredentials = true;
+    }
+    setHeaders(vditor, xhr);
+    vditor.upload.isUploading = true;
+    xhr.onreadystatechange = () => {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                resolve(xhr.responseText);
+            } else {
+                reject(xhr.responseText);
+            }
+        }
+    };
+    xhr.upload.onprogress = (event: ProgressEvent) => {
+        if (!event.lengthComputable) {
+            return;
+        }
+        onProgress(event.loaded / event.total);
+    };
+    xhr.send(formData);
+})
 
 export {Upload, uploadFiles};
