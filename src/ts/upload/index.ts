@@ -172,7 +172,7 @@ const uploadFiles =
             return;
         }
 
-        if (!vditor.options.upload.url || !vditor.upload) {
+        if ((!vditor.options.upload.url && !vditor.options.upload.customUploader) || !vditor.upload) {
             if (element) {
                 element.value = "";
             }

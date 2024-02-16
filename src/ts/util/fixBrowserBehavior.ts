@@ -1421,7 +1421,7 @@ export const paste = async (vditor: IVditor, event: (ClipboardEvent | DragEvent)
             }
             vditor.outline.render(vditor);
         } else if (files.length > 0) {
-            if (vditor.options.upload.url || vditor.options.upload.handler) {
+            if (vditor.options.upload.url || vditor.options.upload.handler || vditor.options.upload.customUploader) {
                 await uploadFiles(vditor, files);
             } else {
                 const fileReader = new FileReader();
