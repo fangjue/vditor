@@ -18,6 +18,8 @@ const insertIframe = (element: HTMLElement, src: string) => {
     const iframe = document.createElement('iframe')
     iframe.className = 'iframe__video'
     iframe.src = src
+    iframe.allowFullscreen = true
+    iframe.allow="autoplay;encrypted-media"
     element.insertAdjacentElement('afterend', iframe)
 }
 
@@ -29,6 +31,7 @@ const iframeRender = (element: HTMLElement, url: string) => {
     const facebookMatch = url.match(/(?:www\.|\/\/)facebook\.com\/([^\/]+)\/videos\/([0-9]+)/);
     const dailymotionMatch = url.match(/.+dailymotion.com\/(video|hub)\/(\w+)\?/);
     const bilibiliMatch = url.match(/(?:www\.|\/\/)bilibili\.com\/video\/(\w+)/);
+    const bilibiliLiveMatch = url.match(/(?:live\.|\/\/)bilibili\.com\/(\d+)/);
     const tedMatch = url.match(/(?:www\.|\/\/)ted\.com\/talks\/(\w+)/);
 
     if (youtubeMatch && youtubeMatch[1].length === 11) {
@@ -72,6 +75,8 @@ const iframeRender = (element: HTMLElement, url: string) => {
             }
         });
         insertIframe(element, src)
+    } else if (bilibiliLiveMatch && bilibiliLiveMatch[1]) {
+        insertIframe(element, `//www.bilibili.com/blackboard/live/live-activity-player.html?cid=${bilibiliLiveMatch[1]}`)
     } else if (tedMatch && tedMatch[1]) {
         insertIframe(element, `embed.ted.com/talks/${tedMatch[1]}`)
     }
