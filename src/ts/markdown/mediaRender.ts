@@ -1,14 +1,25 @@
 import {getSearch} from "../util/function";
 
 const videoRender = (element: HTMLElement, url: string) => {
-    element.insertAdjacentHTML("afterend", `<video controls="controls" src="${url}"></video>`);
-    element.remove();
-};
+    const video = document.createElement('video')
+    video.controls = true
+    video.src = url
+    element.insertAdjacentElement('afterend', video)
+}
 
 const audioRender = (element: HTMLElement, url: string) => {
-    element.insertAdjacentHTML("afterend", `<audio controls="controls" src="${url}"></audio>`);
-    element.remove();
-};
+    const audio = document.createElement('audio')
+    audio.controls = true
+    audio.src = url
+    element.insertAdjacentElement('afterend', audio)
+}
+
+const insertIframe = (element: HTMLElement, src: string) => {
+    const iframe = document.createElement('iframe')
+    iframe.className = 'iframe__video'
+    iframe.src = src
+    element.insertAdjacentElement('afterend', iframe)
+}
 
 const iframeRender = (element: HTMLElement, url: string) => {
     const youtubeMatch = url.match(/\/\/(?:www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w|-]{11})(?:(?:[\?&]t=)(\S+))?/);
@@ -21,33 +32,18 @@ const iframeRender = (element: HTMLElement, url: string) => {
     const tedMatch = url.match(/(?:www\.|\/\/)ted\.com\/talks\/(\w+)/);
 
     if (youtubeMatch && youtubeMatch[1].length === 11) {
-        element.insertAdjacentHTML("afterend",
-            `<iframe class="iframe__video" src="//www.youtube.com/embed/${youtubeMatch[1] +
-            (youtubeMatch[2] ? "?start=" + youtubeMatch[2] : "")}"></iframe>`);
-        element.remove();
+        insertIframe(element, `//www.youtube.com/embed/${youtubeMatch[1] +
+            (youtubeMatch[2] ? "?start=" + youtubeMatch[2] : "")}`)
     } else if (youkuMatch && youkuMatch[1]) {
-        element.insertAdjacentHTML("afterend",
-            `<iframe class="iframe__video" src="//player.youku.com/embed/${youkuMatch[1]}"></iframe>`);
-        element.remove();
+        insertIframe(element, `//player.youku.com/embed/${youkuMatch[1]}`)
     } else if (qqMatch && qqMatch[1]) {
-        element.insertAdjacentHTML("afterend",
-            `<iframe class="iframe__video" src="https://v.qq.com/txp/iframe/player.html?vid=${qqMatch[1]}"></iframe>`);
-        element.remove();
+        insertIframe(element, `https://v.qq.com/txp/iframe/player.html?vid=${qqMatch[1]}`)
     } else if (coubMatch && coubMatch[1]) {
-        element.insertAdjacentHTML("afterend",
-            `<iframe class="iframe__video"
- src="//coub.com/embed/${coubMatch[1]}?muted=false&autostart=false&originalSize=true&startWithHD=true"></iframe>`);
-        element.remove();
+        insertIframe(element, `//coub.com/embed/${coubMatch[1]}?muted=false&autostart=false&originalSize=true&startWithHD=true`)
     } else if (facebookMatch && facebookMatch[0]) {
-        element.insertAdjacentHTML("afterend",
-            `<iframe class="iframe__video"
- src="https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(facebookMatch[0])}"></iframe>`);
-        element.remove();
+        insertIframe(element, `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(facebookMatch[0])}`)
     } else if (dailymotionMatch && dailymotionMatch[2]) {
-        element.insertAdjacentHTML("afterend",
-            `<iframe class="iframe__video"
- src="https://www.dailymotion.com/embed/video/${dailymotionMatch[2]}"></iframe>`);
-        element.remove();
+        insertIframe(element, `https://www.dailymotion.com/embed/video/${dailymotionMatch[2]}`)
     } else if (url.indexOf("bilibili.com") > -1 && (url.indexOf("bvid=") > -1 || (bilibiliMatch && bilibiliMatch[1]))) {
         const params: IObject = {
             bvid:  getSearch("bvid", url) || (bilibiliMatch && bilibiliMatch[1]),
@@ -75,13 +71,9 @@ const iframeRender = (element: HTMLElement, url: string) => {
                 src += "&";
             }
         });
-        element.insertAdjacentHTML("afterend",
-            `<iframe class="iframe__video" src="${src}"></iframe>`);
-        element.remove();
+        insertIframe(element, src)
     } else if (tedMatch && tedMatch[1]) {
-        element.insertAdjacentHTML("afterend",
-            `<iframe class="iframe__video" src="//embed.ted.com/talks/${tedMatch[1]}"></iframe>`);
-        element.remove();
+        insertIframe(element, `embed.ted.com/talks/${tedMatch[1]}`)
     }
 };
 
